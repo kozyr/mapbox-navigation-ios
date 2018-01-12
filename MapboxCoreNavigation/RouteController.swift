@@ -23,8 +23,14 @@ public protocol RouteControllerDelegate: class {
     @objc(routeController:shouldRerouteFromLocation:)
     optional func routeController(_ routeController: RouteController, shouldRerouteFrom location: CLLocation) -> Bool
 
-    @objc(routeController:shouldIncrementLegWhenArrivingAtWaypoint:)
-    optional func routeController(_ routeController: RouteController, shouldIncrementLegWhenArrivingAtWaypoint waypoint: Waypoint) -> Bool
+   /**
+     Called before the route controller arrives at a waypoint to allow the delegate to prevent the route controller from advancing to the next leg.
+     
+     - returns: True to advance to the next leg, or false to remain on the completed leg.
+     - postcondition: If you return false, you must manually advance to the next leg by obtaining the value of the `routeProgress` property and incrementing the `RouteProgress.legIndex` property.
+     */
+    @objc(routeController:shouldAdvanceToNextLegWhenArrivingAtWaypoint:)
+    optional func routeController(_ routeController: RouteController, shouldAdvanceToNextLegWhenArrivingAt waypoint: Waypoint) -> Bool
 
     /**
      Called immediately before the route controller calculates a new route.
@@ -458,7 +464,7 @@ extension RouteController {
         if let progress = notification.userInfo?[RouteControllerProgressDidChangeNotificationProgressKey] as? RouteProgress {
             let currentDestinationWaypoint = progress.currentLeg.destination
 
-            if progress.currentLegProgress.userHasArrivedAtWaypoint, sessionState.arrivalTimestamp == nil, currentDestinationWaypoint != previousArrivalWaypoint  {
+            if progress.currentLegProgress.userHasArrivedAtWaypoint, sessionState.arrivalTimestamp == nil, currentDestinationWaypoint != previousArrivalWaypoint {
                 delegate?.routeController?(self, didArriveAt: currentDestinationWaypoint)
                 previousArrivalWaypoint = currentDestinationWaypoint
                 
@@ -852,7 +858,7 @@ extension RouteController: CLLocationManagerDelegate {
 
         if routeProgress.currentLegProgress.userHasArrivedAtWaypoint,
             routeProgress.remainingWaypoints.count > 0,
-            (delegate?.routeController?(self, shouldIncrementLegWhenArrivingAtWaypoint: routeProgress.currentLeg.destination) ?? true) {
+            (delegate?.routeController?(self, shouldAdvanceToNextLegWhenArrivingAt: routeProgress.currentLeg.destination) ?? true) {
             routeProgress.legIndex += 1
         }
     }

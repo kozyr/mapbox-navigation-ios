@@ -30,8 +30,14 @@ public protocol NavigationViewControllerDelegate {
     @objc(navigationViewController:shouldRerouteFromLocation:)
     optional func navigationViewController(_ navigationViewController: NavigationViewController, shouldRerouteFrom location: CLLocation) -> Bool
     
-    @objc(navigationViewController:shouldIncrementLegWhenArrivingAtWaypoint:)
-    optional func navigationViewController(_ navigationViewController: NavigationViewController, shouldIncrementLegWhenArrivingAtWaypoint waypoint: Waypoint) -> Bool
+    /**
+     Called before the navigation view controller arrives at a waypoint to allow the delegate to prevent the navigation view controller from advancing to the next leg.
+     
+     - returns: True to advance to the next leg, or false to remain on the completed leg.
+     - postcondition: If you return false, you must manually advance to the next leg by obtaining the value of the `routeController` property and its `RouteController.routeProgress` property and incrementing the `RouteProgress.legIndex` property.
+     */
+    @objc(navigationViewController:shouldAdvanceToNextLegWhenArrivingAtWaypoint:)
+    optional func navigationViewController(_ navigationViewController: NavigationViewController, shouldAdvanceToNextLegWhenArrivingAt waypoint: Waypoint) -> Bool
     
     /**
      Called immediately before the navigation view controller calculates a new route.
@@ -494,8 +500,8 @@ extension NavigationViewController: RouteControllerDelegate {
         return delegate?.navigationViewController?(self, shouldRerouteFrom: location) ?? true
     }
     
-    @objc public func routeController(_ routeController: RouteController, shouldIncrementLegWhenArrivingAtWaypoint waypoint: Waypoint) -> Bool {
-        return delegate?.navigationViewController?(self, shouldIncrementLegWhenArrivingAtWaypoint: waypoint) ?? true
+    @objc public func routeController(_ routeController: RouteController, shouldAdvanceToNextLegWhenArrivingAt waypoint: Waypoint) -> Bool {
+        return delegate?.navigationViewController?(self, shouldAdvanceToNextLegWhenArrivingAt: waypoint) ?? true
     }
     
     @objc public func routeController(_ routeController: RouteController, willRerouteFrom location: CLLocation) {
@@ -535,9 +541,9 @@ extension NavigationViewController: RouteControllerDelegate {
         
         guard routeController.routeProgress.isFinalLeg else { return }
         
-        // If the developer implements`NavigationViewController(shouldIncrementLegWhenArrivingAtWaypoint:)` and sets it to false,
-        // we should emit `NavigationViewController(didArriveAt:)` and not show the end of route feedback UI.
-        if let shouldIncrementLegWhenArrivingAtWaypoint = delegate?.navigationViewController?(self, shouldIncrementLegWhenArrivingAtWaypoint: waypoint), shouldIncrementLegWhenArrivingAtWaypoint == false {
+        // If the developer implements `NavigationViewController(_:shouldAdvanceToNextLegWhenArrivingAt:)` and sets it to false,
+        // we should emit `NavigationViewController(_:didArriveAt:)` and not show the end of route feedback UI.
+        if let shouldAdvanceToNextLegWhenArrivingAtWaypoint = delegate?.navigationViewController?(self, shouldAdvanceToNextLegWhenArrivingAt: waypoint), shouldAdvanceToNextLegWhenArrivingAtWaypoint == false {
             return
         }
         
