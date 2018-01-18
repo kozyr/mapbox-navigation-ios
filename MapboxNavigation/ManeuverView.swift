@@ -62,9 +62,8 @@ public class ManeuverView: UIView {
         }
         
         var flip: Bool = false
-        let type: ManeuverType = step.maneuverType ?? .turn
-        let angle = ((step.finalHeading ?? 0) - (step.initialHeading ?? 0)).wrap(min: -180, max: 180)
-        let direction: ManeuverDirection = step.maneuverDirection ?? ManeuverDirection(angle: Int(angle))
+        let type: ManeuverType = step.maneuverType
+        let direction: ManeuverDirection = step.maneuverDirection
 
         switch type {
         case .merge:
